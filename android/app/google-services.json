@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "38038261577",
+    "project_id": "looksmart-b7df5",
+    "storage_bucket": "looksmart-b7df5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:38038261577:android:e97ebb7aad39192f08d498",
+        "android_client_info": {
+          "package_name": "com.example.look_smart"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBSpTHSUt2icj2NBIly9RUml3d2SaRNXQg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
