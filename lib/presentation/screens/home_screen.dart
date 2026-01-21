@@ -41,9 +41,23 @@ class HomeScreen extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'LookSmart',
-                          style: Theme.of(context).textTheme.displayMedium,
+                        RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: 'Look',
+                                style: Theme.of(context).textTheme.displayMedium,
+                              ),
+                              TextSpan(
+                                text: ' ',
+                                style: Theme.of(context).textTheme.displayMedium,
+                              ),
+                              TextSpan(
+                                text: 'Smart',
+                                style: Theme.of(context).textTheme.displayMedium?.copyWith(color: Colors.cyanAccent),
+                              ),
+                            ],
+                          ),
                         ),
                         Text(
                           'Find your unique style',
@@ -51,10 +65,33 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const CircleAvatar(
-                      backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=12'), // Placeholder
-                      radius: 24,
-                    )
+                    Row(
+                      children: [
+                        GlassContainer(
+                          onTap: () async {
+                            final uid = Provider.of<AuthService>(context, listen: false).currentUser?.uid;
+                            if (uid == null) return;
+                            await HistoryService().logNavigation(uid, 'favorites');
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Favorites')));
+                          },
+                          padding: const EdgeInsets.all(12),
+                          borderRadius: 16,
+                          child: const Icon(Icons.favorite_border, color: Colors.white),
+                        ),
+                        const SizedBox(width: 8),
+                        GlassContainer(
+                          onTap: () async {
+                            final uid = Provider.of<AuthService>(context, listen: false).currentUser?.uid;
+                            if (uid == null) return;
+                            await HistoryService().logNavigation(uid, 'cart');
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const OrdersScreen()));
+                          },
+                          padding: const EdgeInsets.all(12),
+                          borderRadius: 16,
+                          child: const Icon(Icons.shopping_bag_outlined, color: Colors.white),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -62,8 +99,21 @@ class HomeScreen extends StatelessWidget {
                 // Search Bar
                 CustomTextField(
                   controller: searchController,
-                  hintText: 'Search brands, outfits...',
+                  hintText: 'Search for brands, outfits, or styles',
                   prefixIcon: Icons.search,
+                  suffixIcon: Icons.mic_none,
+                  onSuffixTap: () async {
+                    final uid = Provider.of<AuthService>(context, listen: false).currentUser?.uid;
+                    if (uid == null) return;
+                    await HistoryService().logEvent(uid, 'home_search', {'type': 'voice'});
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Voice search coming soon')));
+                  },
+                  onSubmitted: (q) async {
+                    final uid = Provider.of<AuthService>(context, listen: false).currentUser?.uid;
+                    if (uid == null) return;
+                    await HistoryService().logEvent(uid, 'home_search', {'type': 'text', 'q': q});
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Searching: $q')));
+                  },
                 ),
                 const SizedBox(height: 24),
 
@@ -100,7 +150,7 @@ class HomeScreen extends StatelessWidget {
                         await HistoryService().logNavigation(uid, 'ai_tools_see_all');
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const AIToolsScreen()));
                       },
-                      child: const Text('See All'),
+                      child: const Text('View All', style: TextStyle(color: Colors.cyanAccent)),
                     ),
                   ],
                 ),

@@ -19,7 +19,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _screens = [
     const HomeScreen(),
     const AIToolsScreen(),
-    const ChatScreen(),
+    const OrdersScreen(),
     const OrdersScreen(),
     const ProfileScreen(),
   ];
@@ -91,22 +91,10 @@ class _MainScreenState extends State<MainScreen> {
                   activeIcon: Icon(Icons.extension, shadows: [Shadow(color: Colors.white, blurRadius: 10)]),
                   label: 'Tools',
                 ),
-                BottomNavigationBarItem(
-                  icon: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.white.withOpacity(0.5),
-                          blurRadius: 10,
-                        )
-                      ],
-                    ),
-                    child: const Icon(Icons.smart_toy, color: Colors.black),
-                  ),
-                  label: 'AI',
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.card_giftcard),
+                  activeIcon: Icon(Icons.card_giftcard, shadows: [Shadow(color: Colors.white, blurRadius: 10)]),
+                  label: 'Rewards',
                 ),
                 const BottomNavigationBarItem(
                   icon: Icon(Icons.shopping_bag),
