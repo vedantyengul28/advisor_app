@@ -7,6 +7,7 @@ import '../../data/services/auth_service.dart';
 import '../../data/services/chat_service.dart';
 import '../../data/models/chat_message_model.dart';
 import '../../data/services/history_service.dart';
+import '../../data/services/ai_service.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -68,13 +69,18 @@ class _ChatScreenState extends State<ChatScreen> {
       _controller.clear();
     });
     _chatService.saveMessage(userMsg);
-    Future.delayed(const Duration(seconds: 1), () {
+    _respond(uid, userMsg.message);
+  }
+
+  Future<void> _respond(String uid, String question) async {
+    final botNow = DateTime.now();
+    try {
+      final answer = await AiService().askStyleAdvisor(uid, question);
       if (!mounted) return;
-      final botNow = DateTime.now();
       final botMsg = ChatMessage(
         userId: uid,
         isUser: false,
-        message: 'I found some great casual styles for you! How about a beige linen shirt with dark chinos?',
+        message: answer,
         createdAt: botNow,
       );
       setState(() {
@@ -84,8 +90,24 @@ class _ChatScreenState extends State<ChatScreen> {
           'time': _formatTime(botNow),
         });
       });
-      _chatService.saveMessage(botMsg);
-    });
+      await _chatService.saveMessage(botMsg);
+    } catch (e) {
+      if (!mounted) return;
+      final botMsg = ChatMessage(
+        userId: uid,
+        isUser: false,
+        message: 'Unable to get AI reply. Please try again later.',
+        createdAt: botNow,
+      );
+      setState(() {
+        _messages.add({
+          'isUser': false,
+          'message': botMsg.message,
+          'time': _formatTime(botNow),
+        });
+      });
+      await _chatService.saveMessage(botMsg);
+    }
   }
 
   @override

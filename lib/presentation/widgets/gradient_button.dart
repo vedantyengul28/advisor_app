@@ -5,12 +5,14 @@ class GradientButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
   final bool isLoading;
+  final List<Color>? colors;
 
   const GradientButton({
     super.key,
     required this.text,
     required this.onPressed,
     this.isLoading = false,
+    this.colors,
   });
 
   @override
@@ -19,16 +21,17 @@ class GradientButton extends StatelessWidget {
       width: double.infinity,
       height: 50,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            AppColors.primaryAccent,
-            AppColors.primaryAccentGlow,
-          ],
+        gradient: LinearGradient(
+          colors: colors ??
+              const [
+                AppColors.primaryAccent,
+                AppColors.primaryAccentGlow,
+              ],
         ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryAccent.withOpacity(0.4),
+            color: (colors != null ? colors!.first : AppColors.primaryAccent).withOpacity(0.4),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

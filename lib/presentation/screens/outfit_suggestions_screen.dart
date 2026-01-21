@@ -71,28 +71,29 @@ class _OutfitSuggestionsScreenState extends State<OutfitSuggestionsScreen> {
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     children: const [
-                      Icon(Icons.checkroom, size: 60, color: Colors.white54),
-                      SizedBox(height: 12),
-                      Text('Generate outfit suggestions', style: TextStyle(color: Colors.white)),
+                      Text('Smart Casual — Day Out', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 8),
+                      Text('Tap below to generate personalized ideas', style: TextStyle(color: Colors.white70)),
                     ],
                   ),
                 ),
                 const SizedBox(height: 24),
                 GradientButton(text: 'Get Suggestions', onPressed: _generate, isLoading: _loading),
                 const SizedBox(height: 24),
-                if (_suggestions.isNotEmpty)
-                  GlassContainer(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: _suggestions
-                          .map((s) => Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 6),
-                                child: Text('• $s', style: const TextStyle(color: Colors.white)),
-                              ))
-                          .toList(),
-                    ),
+                if (_suggestions.isNotEmpty) ...[
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('Suggestions', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
+                  const SizedBox(height: 12),
+                  ..._suggestions.map((s) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: GlassContainer(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(s, style: const TextStyle(color: Colors.white)),
+                        ),
+                      )),
+                ],
               ],
             ),
           ),

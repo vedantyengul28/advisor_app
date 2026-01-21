@@ -72,6 +72,7 @@ class HomeScreen extends StatelessWidget {
                   title: 'Virtual Try-On',
                   subtitle: 'Upload your photo and try on clothes instantly.',
                   buttonText: 'Try It On',
+                  buttonColor: AppColors.shipping,
                   onPressed: () {
                     Navigator.push(
                       context,

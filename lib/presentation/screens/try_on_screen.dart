@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../widgets/glass_container.dart';
@@ -8,6 +9,7 @@ import '../../data/services/auth_service.dart';
 import '../../data/services/try_on_service.dart';
 import '../../data/models/try_on_model.dart';
 import '../../data/services/history_service.dart';
+import 'package:image_picker/image_picker.dart';
 
 class TryOnScreen extends StatefulWidget {
   const TryOnScreen({super.key});
@@ -23,16 +25,29 @@ class _TryOnScreenState extends State<TryOnScreen> {
   final _weightController = TextEditingController();
   final _bodyTypeController = TextEditingController();
   final TryOnService _tryOnService = TryOnService();
+  final ImagePicker _picker = ImagePicker();
+  XFile? _userImage;
+  XFile? _clothingImage;
+  String? _error;
 
   void _processTryOn() {
-    setState(() => _isProcessing = true);
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() {
-          _isProcessing = false;
-          _isResultReady = true;
-        });
-      }
+    if (_userImage == null || _clothingImage == null) {
+      setState(() => _error = 'Please select your photo and a clothing image.');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Select both user photo and clothing image')),
+      );
+      return;
+    }
+    setState(() {
+      _isProcessing = true;
+      _error = null;
+    });
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      setState(() {
+        _isProcessing = false;
+        _isResultReady = true;
+      });
     });
   }
   
@@ -94,11 +109,49 @@ class _TryOnScreenState extends State<TryOnScreen> {
                 onPressed: () async {
                   final uid = Provider.of<AuthService>(context, listen: false).currentUser?.uid;
                   if (uid == null) return;
-                  await HistoryService().logEvent(uid, 'tryon', {'action': 'choose_image'});
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Image picker not implemented')));
+                  await HistoryService().logEvent(uid, 'tryon', {'action': 'choose_user_image'});
+                  final img = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+                  if (img != null) {
+                    setState(() => _userImage = img);
+                  }
                 },
                 child: const Text('Choose Image'),
               ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () async {
+                  final uid = Provider.of<AuthService>(context, listen: false).currentUser?.uid;
+                  if (uid == null) return;
+                  await HistoryService().logEvent(uid, 'tryon', {'action': 'choose_clothing_image'});
+                  final img = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+                  if (img != null) {
+                    setState(() => _clothingImage = img);
+                  }
+                },
+                child: const Text('Choose Clothing'),
+              ),
+              const SizedBox(height: 16),
+              if (_userImage != null)
+                Column(
+                  children: [
+                    const Text('Selected Photo', style: TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 8),
+                    Image.file(File(_userImage!.path), height: 160, fit: BoxFit.cover),
+                  ],
+                ),
+              const SizedBox(height: 12),
+              if (_clothingImage != null)
+                Column(
+                  children: [
+                    const Text('Selected Clothing', style: TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 8),
+                    Image.file(File(_clothingImage!.path), height: 120, fit: BoxFit.contain),
+                  ],
+                ),
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Text(_error!, style: const TextStyle(color: Colors.redAccent)),
+              ],
             ],
           ),
         ),
@@ -113,6 +166,7 @@ class _TryOnScreenState extends State<TryOnScreen> {
           text: 'Generate Try-On',
           onPressed: _processTryOn,
           isLoading: _isProcessing,
+          colors: const [AppColors.shipping, Color(0xFF42A5F5)],
         ),
       ],
     );
@@ -128,7 +182,19 @@ class _TryOnScreenState extends State<TryOnScreen> {
             Expanded(
               child: Column(
                 children: [
-                  Container(height: 200, color: Colors.grey, child: const Center(child: Text('Original'))),
+                  Container(
+                    height: 220,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: _userImage == null
+                        ? const Center(child: Text('Original'))
+                        : ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.file(File(_userImage!.path), fit: BoxFit.cover),
+                          ),
+                  ),
                 ],
               ),
             ),
@@ -136,7 +202,50 @@ class _TryOnScreenState extends State<TryOnScreen> {
              Expanded(
               child: Column(
                 children: [
-                  Container(height: 200, color: AppColors.primaryAccent, child: const Center(child: Text('Simulated'))),
+                  Container(
+                    height: 220,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: _userImage == null
+                        ? const Center(child: Text('Simulated'))
+                        : ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final w = constraints.maxWidth;
+                                final h = constraints.maxHeight;
+                                // Mock torso region: center area covering ~50% width, ~40% height starting at 30% from top
+                                final torsoWidth = w * 0.5;
+                                final torsoHeight = h * 0.4;
+                                final torsoLeft = (w - torsoWidth) / 2;
+                                final torsoTop = h * 0.30;
+                                return Stack(
+                                  children: [
+                                    Positioned.fill(
+                                      child: Image.file(
+                                        File(_userImage!.path),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                    if (_clothingImage != null)
+                                      Positioned(
+                                        left: torsoLeft,
+                                        top: torsoTop,
+                                        width: torsoWidth,
+                                        height: torsoHeight,
+                                        child: Image.file(
+                                          File(_clothingImage!.path),
+                                          fit: BoxFit.contain,
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                  ),
                 ],
               ),
             ),
@@ -146,11 +255,19 @@ class _TryOnScreenState extends State<TryOnScreen> {
         GradientButton(
           text: 'Save Look',
           onPressed: _saveLook,
+          colors: const [AppColors.shipping, Color(0xFF42A5F5)],
         ),
         const SizedBox(height: 16),
          TextButton(
-          onPressed: () => setState(() => _isResultReady = false),
-          child: const Text('Try Another'),
+          onPressed: () {
+            setState(() {
+              _isResultReady = false;
+              _userImage = null;
+              _clothingImage = null;
+              _error = null;
+            });
+          },
+          child: const Text('Retake'),
         ),
       ],
     );

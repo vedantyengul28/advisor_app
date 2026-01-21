@@ -75,20 +75,67 @@ class _HairstyleRecommendationsScreenState extends State<HairstyleRecommendation
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
+                Container(
+                  height: 240,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.glassBorder),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: _image == null
+                        ? const Center(
+                            child: Text(
+                              'Upload a clear headshot (frontal)',
+                              style: TextStyle(color: Colors.white70, fontSize: 16),
+                            ),
+                          )
+                        : Image.file(File(_image!.path), fit: BoxFit.cover),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.camera_alt, color: Colors.white),
+                        label: const Text('Camera'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF7C4DFF),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: () async {
+                          final img = await _picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+                          if (img != null) setState(() => _image = img);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.image, color: Colors.white),
+                        label: const Text('Gallery'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryAccent,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: _pickImage,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
                 GlassContainer(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      const Icon(Icons.cloud_upload_outlined, size: 60, color: Colors.white54),
-                      const SizedBox(height: 12),
-                      const Text('Upload headshot image', style: TextStyle(color: Colors.white)),
-                      const SizedBox(height: 16),
-                      OutlinedButton(onPressed: _pickImage, child: const Text('Choose Image')),
-                      if (_image != null) ...[
-                        const SizedBox(height: 16),
-                        Image.file(File(_image!.path), height: 160, fit: BoxFit.cover),
-                      ],
-                    ],
+                  padding: const EdgeInsets.all(16),
+                  child: const Text(
+                    'Upload a headshot (clear frontal face) to get hairstyle suggestions.',
+                    style: TextStyle(color: Colors.white),
                   ),
                 ),
                 const SizedBox(height: 24),

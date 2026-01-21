@@ -6,6 +6,7 @@ class FeatureCard extends StatelessWidget {
   final String subtitle;
   final String buttonText;
   final VoidCallback onPressed;
+  final Color? buttonColor;
 
   const FeatureCard({
     super.key,
@@ -13,6 +14,7 @@ class FeatureCard extends StatelessWidget {
     required this.subtitle,
     required this.buttonText,
     required this.onPressed,
+    this.buttonColor,
   });
 
   @override
@@ -24,11 +26,6 @@ class FeatureCard extends StatelessWidget {
         color: AppColors.glassWhite,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.glassBorder),
-        image: const DecorationImage(
-          image: NetworkImage('https://placeholder.com/image'), // Replaced in production
-          fit: BoxFit.cover,
-          opacity: 0.2,
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,7 +47,7 @@ class FeatureCard extends StatelessWidget {
           ElevatedButton(
             onPressed: onPressed,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryAccent,
+              backgroundColor: buttonColor ?? AppColors.primaryAccent,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
               ),

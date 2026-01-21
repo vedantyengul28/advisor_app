@@ -75,24 +75,58 @@ class _AIColorAnalysisScreenState extends State<AIColorAnalysisScreen> {
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                GlassContainer(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      const Icon(Icons.cloud_upload_outlined, size: 60, color: Colors.white54),
-                      const SizedBox(height: 12),
-                      const Text('Upload an image for color analysis', style: TextStyle(color: Colors.white)),
-                      const SizedBox(height: 16),
-                      OutlinedButton(onPressed: _pickImage, child: const Text('Choose Image')),
-                      if (_image != null) ...[
-                        const SizedBox(height: 16),
-                        Image.file(File(_image!.path), height: 160, fit: BoxFit.cover),
-                      ],
-                    ],
+                Container(
+                  height: 240,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.glassBorder),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: _image == null
+                        ? const Center(
+                            child: Text(
+                              'No image selected',
+                              style: TextStyle(color: Colors.white70, fontSize: 16),
+                            ),
+                          )
+                        : Image.file(File(_image!.path), fit: BoxFit.cover),
                   ),
                 ),
                 const SizedBox(height: 24),
-                GradientButton(text: 'Analyze', onPressed: _analyze, isLoading: _loading),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.image, color: Colors.white),
+                        label: const Text('Pick Image'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryAccent,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: _pickImage,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.analytics, color: Colors.white),
+                        label: const Text('Analyze'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF7C4DFF),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: _loading ? null : _analyze,
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 24),
                 if (_result != null)
                   GlassContainer(
