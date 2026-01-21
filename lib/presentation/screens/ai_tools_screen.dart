@@ -4,6 +4,9 @@ import '../widgets/ai_tool_card.dart';
 import 'package:provider/provider.dart';
 import '../../data/services/auth_service.dart';
 import '../../data/services/history_service.dart';
+import 'chat_screen.dart';
+import 'try_on_screen.dart';
+import '../../data/services/style_features_service.dart';
 
 class AIToolsScreen extends StatelessWidget {
   const AIToolsScreen({super.key});
@@ -47,9 +50,7 @@ class AIToolsScreen extends StatelessWidget {
                   final uid = auth.currentUser?.uid;
                   if (uid == null) return;
                   await history.logToolUse(uid, 'ai_analysis');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('AI Analysis started')),
-                  );
+                  await StyleFeaturesService.openAIColorAnalysis(context);
                 },
               ),
               AIToolCard(
@@ -60,9 +61,7 @@ class AIToolsScreen extends StatelessWidget {
                   final uid = auth.currentUser?.uid;
                   if (uid == null) return;
                   await history.logToolUse(uid, 'body_shape_analysis');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Body Shape Analysis started')),
-                  );
+                  await StyleFeaturesService.openBodyShapeAnalysis(context);
                 },
               ),
               AIToolCard(
@@ -73,9 +72,7 @@ class AIToolsScreen extends StatelessWidget {
                   final uid = auth.currentUser?.uid;
                   if (uid == null) return;
                   await history.logToolUse(uid, 'hairstyle_recommendations');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Hairstyle Recommendations started')),
-                  );
+                  await StyleFeaturesService.openHairstyleRecommendations(context);
                 },
               ),
               AIToolCard(
@@ -86,9 +83,7 @@ class AIToolsScreen extends StatelessWidget {
                   final uid = auth.currentUser?.uid;
                   if (uid == null) return;
                   await history.logToolUse(uid, 'outfit_suggestions');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Outfit Suggestions started')),
-                  );
+                  await StyleFeaturesService.openOutfitSuggestions(context);
                 },
               ),
               AIToolCard(
@@ -99,9 +94,7 @@ class AIToolsScreen extends StatelessWidget {
                   final uid = auth.currentUser?.uid;
                   if (uid == null) return;
                   await history.logToolUse(uid, 'grooming_tips');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Grooming Tips opened')),
-                  );
+                  await StyleFeaturesService.openGroomingTips(context);
                 },
               ),
             ],

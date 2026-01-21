@@ -7,6 +7,9 @@ import 'try_on_screen.dart';
 import 'package:provider/provider.dart';
 import '../../data/services/auth_service.dart';
 import '../../data/services/history_service.dart';
+import 'chat_screen.dart';
+import 'ai_tools_screen.dart';
+import 'orders_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -94,7 +97,7 @@ class HomeScreen extends StatelessWidget {
                         final uid = Provider.of<AuthService>(context, listen: false).currentUser?.uid;
                         if (uid == null) return;
                         await HistoryService().logNavigation(uid, 'ai_tools_see_all');
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opening AI Tools')));
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const AIToolsScreen()));
                       },
                       child: const Text('See All'),
                     ),
@@ -131,7 +134,15 @@ class HomeScreen extends StatelessWidget {
         final uid = Provider.of<AuthService>(context, listen: false).currentUser?.uid;
         if (uid == null) return;
         await HistoryService().logNavigation(uid, title.toLowerCase().replaceAll(' ', '_'));
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$title opened')));
+        if (title == 'Style Chat') {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatScreen()));
+        } else if (title == 'Outfit ID') {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const TryOnScreen()));
+        } else if (title == 'Wardrobe') {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const OrdersScreen()));
+        } else if (title == 'Trends') {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const AIToolsScreen()));
+        }
       },
       padding: const EdgeInsets.all(16),
       child: Column(
