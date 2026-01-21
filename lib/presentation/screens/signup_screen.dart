@@ -5,7 +5,7 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/glass_container.dart';
 import '../widgets/gradient_button.dart';
 import '../../data/services/auth_service.dart';
-import 'main_screen.dart';
+import 'style_journey_start_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -46,12 +46,11 @@ class _SignupScreenState extends State<SignupScreen> {
         stylePreference: _selectedStyle,
       );
       
-      if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const MainScreen()),
-          (route) => false,
-        );
-      }
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const StyleJourneyStartScreen()),
+        (route) => false,
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

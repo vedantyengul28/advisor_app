@@ -4,6 +4,8 @@ import '../../core/constants/app_colors.dart';
 import '../../data/services/auth_service.dart';
 import 'login_screen.dart';
 import 'main_screen.dart';
+import '../../data/services/user_service.dart';
+import 'style_journey_start_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -31,8 +33,11 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     if (authService.currentUser != null) {
+      final uid = authService.currentUser!.uid;
+      final complete = await UserService().isProfileComplete(uid);
+      if (!mounted) return;
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const MainScreen()),
+        MaterialPageRoute(builder: (_) => complete ? const MainScreen() : const StyleJourneyStartScreen()),
       );
     } else {
       Navigator.of(context).pushReplacement(

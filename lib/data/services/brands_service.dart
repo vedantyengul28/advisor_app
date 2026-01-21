@@ -6,7 +6,32 @@ class BrandsService {
 
   Future<List<Brand>> getCatalog() async {
     final snap = await _db.collection('brand_catalog').orderBy('name').get();
-    return snap.docs.map((d) => Brand.fromMap(d.data())).toList();
+    final list = snap.docs.map((d) => Brand.fromMap(d.data())).toList();
+    if (list.isNotEmpty) return list;
+    final names = [
+      "Levi's",
+      'H&M',
+      'Zara',
+      'Adidas',
+      'Nike',
+      'Uniqlo',
+      'Calvin Klein',
+      'Tommy Hilfiger',
+      'Allen Solly',
+      'U.S. Polo Assn.',
+      'W',
+      'Biba',
+      'AND',
+      'Fabindia',
+      'Pepe Jeans',
+      'Roadster',
+    ];
+    String slug(String s) {
+      final lower = s.toLowerCase();
+      final cleaned = lower.replaceAll(RegExp(r"[^a-z0-9]+"), '_');
+      return cleaned.replaceAll(RegExp(r"^_+|_+$"), '');
+    }
+    return names.map((n) => Brand(id: slug(n), name: n)).toList();
   }
 
   Future<void> setUserBrands(String uid, List<String> brandIds) async {

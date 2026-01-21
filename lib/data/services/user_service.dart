@@ -12,9 +12,9 @@ class UserService {
     final hasCore = profile.name.isNotEmpty &&
         profile.email.isNotEmpty &&
         profile.gender.isNotEmpty &&
-        profile.stylePreference.isNotEmpty;
+        profile.stylePreference.isNotEmpty &&
+        (profile.occupation?.isNotEmpty ?? false);
     final brandsSnap = await _db.collection('users').doc(uid).collection('brands').limit(1).get();
-    final addrSnap = await _db.collection('users').doc(uid).collection('addresses').limit(1).get();
-    return hasCore && brandsSnap.docs.isNotEmpty && addrSnap.docs.isNotEmpty;
+    return hasCore && brandsSnap.docs.isNotEmpty;
   }
 }

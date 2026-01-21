@@ -7,6 +7,8 @@ import '../widgets/gradient_button.dart';
 import '../../data/services/auth_service.dart';
 import 'main_screen.dart';
 import 'signup_screen.dart';
+import '../../data/services/user_service.dart';
+import 'style_journey_start_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,14 +25,17 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     setState(() => _isLoading = true);
     try {
-      await Provider.of<AuthService>(context, listen: false).signIn(
+      final auth = Provider.of<AuthService>(context, listen: false);
+      await auth.signIn(
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
-      
-      if (mounted) {
+      final uid = auth.currentUser?.uid;
+      if (uid != null) {
+        final complete = await UserService().isProfileComplete(uid);
+        if (!mounted) return;
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const MainScreen()),
+          MaterialPageRoute(builder: (_) => complete ? const MainScreen() : const StyleJourneyStartScreen()),
         );
       }
     } catch (e) {
