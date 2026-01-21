@@ -51,4 +51,12 @@ class BrandsService {
     final snap = await _db.collection('users').doc(uid).collection('brands').get();
     return snap.docs.map((d) => d.id).toList();
   }
+
+  Future<List<String>> getUserBrandNames(String uid) async {
+    final ids = await getUserBrandIds(uid);
+    if (ids.isEmpty) return const [];
+    final catalog = await getCatalog();
+    final byId = {for (final b in catalog) b.id: b.name};
+    return ids.map((id) => byId[id] ?? id).toList();
+  }
 }

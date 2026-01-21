@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../widgets/glass_container.dart';
@@ -9,6 +8,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../data/services/auth_service.dart';
 import '../../data/services/storage_service.dart';
 import '../../data/services/ai_service.dart';
+import '../widgets/platform_image_widget.dart';
+import '../../data/services/platform_image_picker_service.dart';
 
 class AIColorAnalysisScreen extends StatefulWidget {
   const AIColorAnalysisScreen({super.key});
@@ -18,13 +19,13 @@ class AIColorAnalysisScreen extends StatefulWidget {
 }
 
 class _AIColorAnalysisScreenState extends State<AIColorAnalysisScreen> {
-  final ImagePicker _picker = ImagePicker();
+  final PlatformImagePickerService _platformPicker = PlatformImagePickerService();
   XFile? _image;
   bool _loading = false;
   String? _result;
 
   Future<void> _pickImage() async {
-    final img = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+    final img = await _platformPicker.pickGallery(context);
     if (img != null) {
       setState(() => _image = img);
     }
@@ -92,7 +93,7 @@ class _AIColorAnalysisScreenState extends State<AIColorAnalysisScreen> {
                               style: TextStyle(color: Colors.white70, fontSize: 16),
                             ),
                           )
-                        : Image.file(File(_image!.path), fit: BoxFit.cover),
+                          : PlatformImage.xfile(_image!, fit: BoxFit.cover),
                   ),
                 ),
                 const SizedBox(height: 24),
