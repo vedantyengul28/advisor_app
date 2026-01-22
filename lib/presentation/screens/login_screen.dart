@@ -9,6 +9,7 @@ import 'main_screen.dart';
 import 'signup_screen.dart';
 import '../../data/services/user_service.dart';
 import 'style_journey_start_screen.dart';
+import '../../data/services/onboarding_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -32,7 +33,8 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       final uid = auth.currentUser?.uid;
       if (uid != null) {
-        final complete = await UserService().isProfileComplete(uid);
+        final obDone = await OnboardingService().isComplete(uid);
+        final complete = obDone || await UserService().isProfileComplete(uid);
         if (!mounted) return;
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => complete ? const MainScreen() : const StyleJourneyStartScreen()),

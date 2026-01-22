@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../data/services/auth_service.dart';
 import '../../data/services/history_service.dart';
 import 'main_screen.dart';
+import '../../data/services/onboarding_service.dart';
 
 class OnboardingStylePreferenceScreen extends StatefulWidget {
   const OnboardingStylePreferenceScreen({super.key});
@@ -73,6 +74,8 @@ class _OnboardingStylePreferenceScreenState extends State<OnboardingStylePrefere
                       if (uid == null) return;
                       await auth.updateProfile(stylePreference: _selected);
                       await HistoryService().logEvent(uid, 'onboarding', {'step': 'style', 'value': _selected});
+                      await OnboardingService().markStep(uid, 'style', {'value': _selected});
+                      await OnboardingService().markComplete(uid);
                       if (!mounted) return;
                       Navigator.pushAndRemoveUntil(
                         context,

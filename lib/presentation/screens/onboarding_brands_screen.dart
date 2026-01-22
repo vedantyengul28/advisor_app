@@ -8,6 +8,7 @@ import '../../data/services/brands_service.dart';
 import '../../data/models/brand_model.dart';
 import '../../data/services/history_service.dart';
 import 'onboarding_occupation_screen.dart';
+import '../../data/services/onboarding_service.dart';
 
 class OnboardingBrandsScreen extends StatefulWidget {
   const OnboardingBrandsScreen({super.key});
@@ -118,6 +119,7 @@ class _OnboardingBrandsScreenState extends State<OnboardingBrandsScreen> {
                       if (uid == null) return;
                       await BrandsService().setUserBrands(uid, _selected.toList());
                       await HistoryService().logEvent(uid, 'onboarding', {'step': 'brands', 'count': _selected.length});
+                      await OnboardingService().markStep(uid, 'brands', {'count': _selected.length, 'ids': _selected.toList()});
                       if (!mounted) return;
                       Navigator.pushReplacement(
                         context,

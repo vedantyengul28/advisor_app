@@ -559,20 +559,11 @@
 //   }
 // }
 
-import 'package:flutter/foundation.dart';
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
-import '../widgets/glass_container.dart';
-import '../widgets/custom_text_field.dart';
 import '../widgets/gradient_button.dart';
-
-import '../../data/services/auth_service.dart';
-import '../../data/services/try_on_service.dart';
-import '../../data/models/try_on_model.dart';
-import '../../data/services/history_service.dart';
 
 class TryOnScreen extends StatefulWidget {
   const TryOnScreen({super.key});
@@ -582,74 +573,51 @@ class TryOnScreen extends StatefulWidget {
 }
 
 class _TryOnScreenState extends State<TryOnScreen> {
-  bool _isProcessing = false;
-  bool _isResultReady = false;
+  CameraController? _controller;
+  bool _ready = false;
+  int _shirtIndex = 0;
+  final List<String> _shirts = const [
+    'assets/shirts/shirt1.png',
+    'assets/shirts/shirt2.png',
+    'assets/shirts/shirt3.png',
+  ];
 
-  final _heightController = TextEditingController();
-  final _weightController = TextEditingController();
-  final _bodyTypeController = TextEditingController();
-
-  final TryOnService _tryOnService = TryOnService();
-  final ImagePicker _picker = ImagePicker();
-
-  XFile? _userImage;
-  XFile? _clothingImage;
-  String? _error;
-
-  // ---------------- IMAGE WIDGET (WEB + MOBILE SAFE)
-  Widget _buildImage(XFile file, {double? height, BoxFit fit = BoxFit.cover}) {
-    if (kIsWeb) {
-      return Image.network(file.path, height: height, fit: fit);
-    } else {
-      return Image.asset(
-        file.path,
-        height: height,
-        fit: fit,
-        errorBuilder: (_, __, ___) =>
-            const Icon(Icons.broken_image, color: Colors.white54),
-      );
-    }
+  @override
+  void initState() {
+    super.initState();
+    _initCamera();
   }
 
-  void _processTryOn() {
-    if (_userImage == null || _clothingImage == null) {
-      setState(() => _error = 'Please select both images');
-      return;
-    }
-
-    setState(() {
-      _isProcessing = true;
-      _error = null;
-    });
-
-    Future.delayed(const Duration(seconds: 2), () {
+  Future<void> _initCamera() async {
+    try {
+      final cams = await availableCameras();
+      CameraDescription? front;
+      for (final c in cams) {
+        if (c.lensDirection == CameraLensDirection.front) {
+          front = c;
+          break;
+        }
+      }
+      final desc = front ?? cams.first;
+      final ctrl = CameraController(desc, ResolutionPreset.medium, enableAudio: false);
+      await ctrl.initialize();
       if (!mounted) return;
       setState(() {
-        _isProcessing = false;
-        _isResultReady = true;
+        _controller = ctrl;
+        _ready = true;
       });
-    });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _ready = false;
+      });
+    }
   }
 
-  Future<void> _saveLook() async {
-    final auth = Provider.of<AuthService>(context, listen: false);
-    final uid = auth.currentUser?.uid;
-    if (uid == null) return;
-
-    final record = TryOnRecord(
-      userId: uid,
-      heightCm: double.tryParse(_heightController.text),
-      weightKg: double.tryParse(_weightController.text),
-      bodyType: _bodyTypeController.text,
-      createdAt: DateTime.now(),
-    );
-
-    await _tryOnService.saveRecord(record);
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Saved to your looks')));
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
   }
 
   @override
@@ -667,133 +635,56 @@ class _TryOnScreenState extends State<TryOnScreen> {
             colors: [AppColors.backgroundStart, AppColors.backgroundEnd],
           ),
         ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: _isResultReady ? _buildResultView() : _buildInputForm(),
-          ),
-        ),
+        child: SafeArea(child: _buildCameraOverlay(context)),
       ),
     );
   }
 
-  Widget _buildInputForm() {
+  Widget _buildCameraOverlay(BuildContext context) {
+    if (!_ready || _controller == null || !_controller!.value.isInitialized) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final size = MediaQuery.of(context).size;
+    final shirtWidth = size.width * 0.6;
+    final yOffset = -size.height * 0.12;
     return Column(
       children: [
-        GlassContainer(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              const Icon(
-                Icons.cloud_upload_outlined,
-                size: 60,
-                color: Colors.white54,
+        Expanded(
+          child: Center(
+            child: AspectRatio(
+              aspectRatio: _controller!.value.aspectRatio,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CameraPreview(_controller!),
+                  Transform.translate(
+                    offset: Offset(0, yOffset),
+                    child: Opacity(
+                      opacity: 0.7,
+                      child: Image.asset(
+                        _shirts[_shirtIndex],
+                        width: shirtWidth,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'Upload Images',
-                style: TextStyle(color: Colors.white),
-              ),
-              const SizedBox(height: 20),
-
-              OutlinedButton(
-                onPressed: () async {
-                  final img = await _picker.pickImage(
-                    source: ImageSource.gallery,
-                    imageQuality: 85,
-                  );
-                  if (img != null) setState(() => _userImage = img);
-                },
-                child: const Text('Choose Body Photo'),
-              ),
-
-              const SizedBox(height: 12),
-
-              OutlinedButton(
-                onPressed: () async {
-                  final img = await _picker.pickImage(
-                    source: ImageSource.gallery,
-                    imageQuality: 85,
-                  );
-                  if (img != null) setState(() => _clothingImage = img);
-                },
-                child: const Text('Choose Clothing'),
-              ),
-
-              if (_userImage != null) ...[
-                const SizedBox(height: 16),
-                _buildImage(_userImage!, height: 160),
-              ],
-
-              if (_clothingImage != null) ...[
-                const SizedBox(height: 12),
-                _buildImage(_clothingImage!, height: 120, fit: BoxFit.contain),
-              ],
-
-              if (_error != null) ...[
-                const SizedBox(height: 12),
-                Text(_error!, style: const TextStyle(color: Colors.redAccent)),
-              ],
-            ],
+            ),
           ),
         ),
-
-        const SizedBox(height: 24),
-        CustomTextField(hintText: 'Height (cm)', controller: _heightController),
         const SizedBox(height: 16),
-        CustomTextField(hintText: 'Weight (kg)', controller: _weightController),
-        const SizedBox(height: 16),
-        CustomTextField(hintText: 'Body Type', controller: _bodyTypeController),
-
-        const SizedBox(height: 32),
         GradientButton(
-          text: 'Generate Try-On',
-          isLoading: _isProcessing,
-          onPressed: _processTryOn,
-          colors: const [AppColors.shipping, Color(0xFF42A5F5)],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildResultView() {
-    return Column(
-      children: [
-        const Text(
-          'AI Try-On Result',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        Row(
-          children: [
-            Expanded(child: _buildImage(_userImage!, height: 220)),
-            const SizedBox(width: 16),
-            Expanded(child: _buildImage(_clothingImage!, height: 220)),
-          ],
-        ),
-
-        const SizedBox(height: 32),
-        GradientButton(
-          text: 'Save Look',
-          onPressed: _saveLook,
-          colors: const [AppColors.shipping, Color(0xFF42A5F5)],
-        ),
-
-        TextButton(
+          text: 'Change Shirt',
+          isLoading: false,
           onPressed: () {
             setState(() {
-              _isResultReady = false;
-              _userImage = null;
-              _clothingImage = null;
+              _shirtIndex = (_shirtIndex + 1) % _shirts.length;
             });
           },
-          child: const Text('Retake'),
+          colors: const [AppColors.shipping, Color(0xFF42A5F5)],
         ),
+        const SizedBox(height: 24),
       ],
     );
   }

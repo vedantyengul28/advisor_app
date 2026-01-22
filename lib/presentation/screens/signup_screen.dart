@@ -6,6 +6,7 @@ import '../widgets/glass_container.dart';
 import '../widgets/gradient_button.dart';
 import '../../data/services/auth_service.dart';
 import 'style_journey_start_screen.dart';
+import '../../data/services/onboarding_service.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -47,6 +48,13 @@ class _SignupScreenState extends State<SignupScreen> {
       );
       
       if (!mounted) return;
+      final uid = Provider.of<AuthService>(context, listen: false).currentUser?.uid;
+      if (uid != null) {
+        await OnboardingService().markStep(uid, 'signup', {
+          'gender': _selectedGender,
+          'style': _selectedStyle,
+        });
+      }
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const StyleJourneyStartScreen()),
         (route) => false,

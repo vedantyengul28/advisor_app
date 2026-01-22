@@ -43,6 +43,7 @@ class _AIColorAnalysisScreenState extends State<AIColorAnalysisScreen> {
     final storage = StorageService();
     final url = await storage.uploadFeatureImage(uid, 'style_advisor', _image!);
     await AiService().analyzeStyle(uid, imageUrl: url);
+    await AiService().analyzeStyleComposite(uid, imageUrl: url);
     final doc = await FirebaseFirestore.instance
         .collection('users')
         .doc(uid)

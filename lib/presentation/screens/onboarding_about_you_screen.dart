@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../data/services/auth_service.dart';
 import '../../data/services/history_service.dart';
 import 'onboarding_brands_screen.dart';
+import '../../data/services/onboarding_service.dart';
 
 class OnboardingAboutYouScreen extends StatefulWidget {
   const OnboardingAboutYouScreen({super.key});
@@ -66,6 +67,7 @@ class _OnboardingAboutYouScreenState extends State<OnboardingAboutYouScreen> {
                       if (uid == null) return;
                       await auth.updateProfile(gender: _department);
                       await HistoryService().logEvent(uid, 'onboarding', {'step': 'about_you', 'department': _department});
+                      await OnboardingService().markStep(uid, 'about_you', {'department': _department});
                       if (!mounted) return;
                       Navigator.pushReplacement(
                         context,
@@ -101,4 +103,3 @@ class _OnboardingAboutYouScreenState extends State<OnboardingAboutYouScreen> {
     );
   }
 }
-

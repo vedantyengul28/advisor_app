@@ -184,53 +184,60 @@ class AiService {
   Future<String> askStyleAdvisor(String uid, String question) async {
     final useBase = ApiConfig.baseUrl.isNotEmpty && ApiConfig.styleApiKey.isNotEmpty;
     if (useBase) {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/style-chat');
-      final res = await http.post(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${ApiConfig.styleApiKey}',
-        },
-        body: jsonEncode({'userId': uid, 'question': question}),
-      );
-      if (res.statusCode != 200) {
-        throw Exception('Style chat API error: ${res.statusCode}');
+      try {
+        final uri = Uri.parse('${ApiConfig.baseUrl}/style-chat');
+        final res = await http.post(
+          uri,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ${ApiConfig.styleApiKey}',
+          },
+          body: jsonEncode({'userId': uid, 'question': question}),
+        );
+        if (res.statusCode != 200) {
+          throw Exception('Style chat API error: ${res.statusCode}');
+        }
+        final json = jsonDecode(res.body) as Map<String, dynamic>;
+        return (json['answer'] as String?) ?? 'No answer generated.';
+      } catch (_) {
+        return 'Unable to get AI reply. Please try again later.';
       }
-      final json = jsonDecode(res.body) as Map<String, dynamic>;
-      return (json['answer'] as String?) ?? 'No answer generated.';
     }
     if (ApiConfig.openAiKey.isNotEmpty) {
-      final uri = Uri.parse('https://api.openai.com/v1/chat/completions');
-      final payload = {
-        'model': 'gpt-4o-mini',
-        'messages': [
-          {
-            'role': 'system',
-            'content':
-                'You are a fashion/style advisor. Provide concise, practical outfit and grooming advice.'
+      try {
+        final uri = Uri.parse('https://api.openai.com/v1/chat/completions');
+        final payload = {
+          'model': 'gpt-4o-mini',
+          'messages': [
+            {
+              'role': 'system',
+              'content': 'You are a professional fashion stylist AI. Give concise, practical fashion advice.'
+            },
+            {'role': 'user', 'content': question}
+          ],
+          'temperature': 0.7,
+        };
+        final res = await http.post(
+          uri,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ${ApiConfig.openAiKey}',
           },
-          {'role': 'user', 'content': question}
-        ],
-        'temperature': 0.7,
-      };
-      final res = await http.post(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${ApiConfig.openAiKey}',
-        },
-        body: jsonEncode(payload),
-      );
-      if (res.statusCode != 200) {
-        throw Exception('OpenAI error: ${res.statusCode}');
+          body: jsonEncode(payload),
+        );
+        if (res.statusCode != 200) {
+          throw Exception('OpenAI error: ${res.statusCode}');
+        }
+        final json = jsonDecode(res.body) as Map<String, dynamic>;
+        final choices = (json['choices'] as List?) ?? const [];
+        final content = (choices.isNotEmpty
+                ? (choices.first['message']?['content'] as String?)
+                : null) ??
+            'No answer generated.';
+        return content;
+      } catch (_) {
+        return 'Unable to get AI reply. Please try again later.';
       }
-      final json = jsonDecode(res.body) as Map<String, dynamic>;
-      final choices = (json['choices'] as List?) ?? const [];
-      final content = (choices.isNotEmpty
-              ? (choices.first['message']?['content'] as String?)
-              : null) ??
-          'No answer generated.';
-      return content;
     }
     return 'AI is not configured. Please set STYLE_API_BASE_URL/STYLE_API_KEY or OPENAI_API_KEY.';
   }
@@ -282,5 +289,41 @@ class AiService {
     } catch (_) {
       return {'analysis': content};
     }
+  }
+
+  Future<Map<String, dynamic>> analyzeStyleComposite(String uid, {String? imageUrl}) async {
+    Map<String, dynamic> result = {
+      'bodyType': 'Rectangle',
+      'skinTone': 'Warm Olive',
+      'recommendedColors': ['Navy', 'Olive', 'Charcoal', 'Cream'],
+      'avoidStyles': ['Neon', 'Overly saturated hues'],
+      'createdAt': DateTime.now().toIso8601String(),
+    };
+    if (ApiConfig.openAiKey.isNotEmpty && imageUrl != null) {
+      try {
+        final openAi = await _analyzeImageWithOpenAI(
+          system:
+              'You are a fashion stylist. Analyze the person image and return JSON with keys: bodyType, skinTone, recommendedColors (array), avoidStyles (array).',
+          imageUrl: imageUrl,
+          jsonSchemaHint:
+              'Return JSON with keys: "bodyType" (string), "skinTone" (string), "recommendedColors" (array of strings), "avoidStyles" (array of strings). No markdown.',
+        );
+        result = {
+          'bodyType': openAi['bodyType'] ?? result['bodyType'],
+          'skinTone': openAi['skinTone'] ?? result['skinTone'],
+          'recommendedColors': (openAi['recommendedColors'] as List?)?.cast<String>() ?? result['recommendedColors'],
+          'avoidStyles': (openAi['avoidStyles'] as List?)?.cast<String>() ?? result['avoidStyles'],
+          'createdAt': DateTime.now().toIso8601String(),
+        };
+      } catch (_) {}
+    }
+    if (imageUrl != null) {
+      result['imageUrl'] = imageUrl;
+    }
+    await _db.collection('users').doc(uid).collection('ai_results').doc('style_composite').set(
+          result,
+          SetOptions(merge: true),
+        );
+    return result;
   }
 }

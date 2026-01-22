@@ -6,7 +6,9 @@ import 'onboarding_about_you_screen.dart';
 import 'package:provider/provider.dart';
 import '../../data/services/auth_service.dart';
 import '../../data/services/history_service.dart';
+import '../../data/services/onboarding_service.dart';
 import 'package:flutter/foundation.dart';
+import 'main_screen.dart';
 
 class StyleJourneyStartScreen extends StatelessWidget {
   const StyleJourneyStartScreen({super.key});
@@ -72,6 +74,14 @@ class StyleJourneyStartScreen extends StatelessWidget {
                       final uid = Provider.of<AuthService>(context, listen: false).currentUser?.uid;
                       if (uid != null) {
                         await HistoryService().logNavigation(uid, 'onboarding_start');
+                        final done = await OnboardingService().isComplete(uid);
+                        if (done && context.mounted) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (_) => const MainScreen()),
+                          );
+                          return;
+                        }
                       }
                       if (kIsWeb) {} // no-op
                       if (context.mounted) {
@@ -117,4 +127,3 @@ class _StartChip extends StatelessWidget {
     );
   }
 }
-

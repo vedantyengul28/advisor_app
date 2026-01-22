@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../data/services/auth_service.dart';
 import '../../data/services/history_service.dart';
 import 'onboarding_style_preference_screen.dart';
+import '../../data/services/onboarding_service.dart';
 
 class OnboardingOccupationScreen extends StatefulWidget {
   const OnboardingOccupationScreen({super.key});
@@ -84,6 +85,7 @@ class _OnboardingOccupationScreenState extends State<OnboardingOccupationScreen>
                       if (uid == null) return;
                       await auth.updateProfile(occupation: _selected);
                       await HistoryService().logEvent(uid, 'onboarding', {'step': 'occupation', 'value': _selected});
+                      await OnboardingService().markStep(uid, 'occupation', {'value': _selected});
                       if (!mounted) return;
                       Navigator.pushReplacement(
                         context,
