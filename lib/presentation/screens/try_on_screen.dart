@@ -591,14 +591,14 @@ class _TryOnScreenState extends State<TryOnScreen> {
   Future<void> _initCamera() async {
     try {
       final cams = await availableCameras();
-      CameraDescription? front;
+      CameraDescription? back;
       for (final c in cams) {
-        if (c.lensDirection == CameraLensDirection.front) {
-          front = c;
+        if (c.lensDirection == CameraLensDirection.back) {
+          back = c;
           break;
         }
       }
-      final desc = front ?? cams.first;
+      final desc = back ?? cams.first;
       final ctrl = CameraController(desc, ResolutionPreset.medium, enableAudio: false);
       await ctrl.initialize();
       if (!mounted) return;
@@ -623,20 +623,8 @@ class _TryOnScreenState extends State<TryOnScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Virtual Try-On'),
-        backgroundColor: Colors.transparent,
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppColors.backgroundStart, AppColors.backgroundEnd],
-          ),
-        ),
-        child: SafeArea(child: _buildCameraOverlay(context)),
-      ),
+      backgroundColor: Colors.black,
+      body: _buildCameraOverlay(context),
     );
   }
 
@@ -646,45 +634,46 @@ class _TryOnScreenState extends State<TryOnScreen> {
     }
     final size = MediaQuery.of(context).size;
     final shirtWidth = size.width * 0.6;
-    final yOffset = -size.height * 0.12;
-    return Column(
+    final previewSize = _controller!.value.previewSize;
+    final previewW = previewSize?.width ?? size.width;
+    final previewH = previewSize?.height ?? size.height;
+    return Stack(
       children: [
-        Expanded(
-          child: Center(
-            child: AspectRatio(
-              aspectRatio: _controller!.value.aspectRatio,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  CameraPreview(_controller!),
-                  Transform.translate(
-                    offset: Offset(0, yOffset),
-                    child: Opacity(
-                      opacity: 0.7,
-                      child: Image.asset(
-                        _shirts[_shirtIndex],
-                        width: shirtWidth,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+        Positioned.fill(
+          child: FittedBox(
+            fit: BoxFit.cover,
+            child: SizedBox(
+              width: previewW,
+              height: previewH,
+              child: CameraPreview(_controller!),
             ),
           ),
         ),
-        const SizedBox(height: 16),
-        GradientButton(
-          text: 'Change Shirt',
-          isLoading: false,
-          onPressed: () {
-            setState(() {
-              _shirtIndex = (_shirtIndex + 1) % _shirts.length;
-            });
-          },
-          colors: const [AppColors.shipping, Color(0xFF42A5F5)],
+        Center(
+          child: Opacity(
+            opacity: 0.7,
+            child: Image.asset(
+              _shirts[_shirtIndex],
+              width: shirtWidth,
+              fit: BoxFit.contain,
+            ),
+          ),
         ),
-        const SizedBox(height: 24),
+        Positioned(
+          left: 24,
+          right: 24,
+          bottom: 24,
+          child: GradientButton(
+            text: 'Change Shirt',
+            isLoading: false,
+            onPressed: () {
+              setState(() {
+                _shirtIndex = (_shirtIndex + 1) % _shirts.length;
+              });
+            },
+            colors: const [AppColors.shipping, Color(0xFF42A5F5)],
+          ),
+        ),
       ],
     );
   }
