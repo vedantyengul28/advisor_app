@@ -52,22 +52,69 @@ An intelligent **Flutter-based AI advisor app** that combines **Gemini AI**, **F
 ```bash
 git clone https://github.com/vedantyengul28/advisor_app.git
 cd advisor_app
+```
 2️⃣ Install Dependencies
+```bash
 flutter pub get
-
+```
 3️⃣ Environment Configuration
 
 Create a .env file (not committed):
-
+```bash
 GEMINI_API_KEY=your_api_key_here
+```
 
 4️⃣ Run the App
+```bash
 flutter run
+```
 📦 Build APK (Release)
+```bash
 flutter build apk --release
-
-
+```
 Output:
-
+```bash
 build/app/outputs/flutter-apk/app-release.apk
+```
+---
+
+## 🔒 Security Notes
+
+API keys are never committed
+
+GitHub Push Protection enabled
+
+Secrets handled via .env
+
+---
+
+## 🧪 Status
+
+✅ Gemini AI Integrated
+
+✅ Firebase Connected
+
+✅ ML Kit Working
+
+✅ Android Release APK Built
+
+🔄 iOS Support (Planned)
+
+🚧 Future Enhancements
+
+📱 iOS Build Support
+
+🌐 Web Version
+
+🧠 More ML Models
+
+💬 Chat History & Personalization
+
+🌙 Dark Mode
+
+
+
+
+
+
 
