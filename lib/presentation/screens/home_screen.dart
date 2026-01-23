@@ -126,7 +126,7 @@ class HomeScreen extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const TryOnScreen()),
+                      MaterialPageRoute(builder: (context) => TryOnScreen()),
                     );
                   },
                 ),
@@ -188,7 +188,7 @@ class HomeScreen extends StatelessWidget {
         if (title == 'Style Chat') {
           Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatScreen()));
         } else if (title == 'Outfit ID') {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const TryOnScreen()));
+          Navigator.push(context, MaterialPageRoute(builder: (_) => TryOnScreen()));
         } else if (title == 'Wardrobe') {
           Navigator.push(context, MaterialPageRoute(builder: (_) => const OrdersScreen()));
         } else if (title == 'Trends') {

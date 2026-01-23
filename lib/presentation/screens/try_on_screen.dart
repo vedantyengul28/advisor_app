@@ -560,13 +560,15 @@
 // }
 
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
+import 'package:google_mlkit_commons/google_mlkit_commons.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../widgets/gradient_button.dart';
 
 class TryOnScreen extends StatefulWidget {
-  const TryOnScreen({super.key});
 
   @override
   State<TryOnScreen> createState() => _TryOnScreenState();
@@ -581,26 +583,36 @@ class _TryOnScreenState extends State<TryOnScreen> {
     'assets/shirts/shirt2.png',
     'assets/shirts/shirt3.png',
   ];
+  late final PoseDetector _poseDetector;
+  bool _busy = false;
+  DateTime _lastPoseTs = DateTime.fromMillisecondsSinceEpoch(0);
+  Offset? _overlayCenter;
+  double _overlayWidth = 0;
+  double _overlayAngle = 0;
 
   @override
   void initState() {
     super.initState();
+    _poseDetector = PoseDetector(options: PoseDetectorOptions(mode: PoseDetectionMode.stream));
     _initCamera();
   }
 
   Future<void> _initCamera() async {
     try {
       final cams = await availableCameras();
-      CameraDescription? back;
+      CameraDescription? front;
       for (final c in cams) {
-        if (c.lensDirection == CameraLensDirection.back) {
-          back = c;
+        if (c.lensDirection == CameraLensDirection.front) {
+          front = c;
           break;
         }
       }
-      final desc = back ?? cams.first;
+      final desc = front ?? cams.first;
       final ctrl = CameraController(desc, ResolutionPreset.medium, enableAudio: false);
       await ctrl.initialize();
+      if (!kIsWeb) {
+        await ctrl.startImageStream(_onImage);
+      }
       if (!mounted) return;
       setState(() {
         _controller = ctrl;
@@ -616,8 +628,83 @@ class _TryOnScreenState extends State<TryOnScreen> {
 
   @override
   void dispose() {
+    _poseDetector.close();
     _controller?.dispose();
     super.dispose();
+  }
+
+  InputImageRotation _rotationFromDegrees(int r) {
+    switch (r % 360) {
+      case 0:
+        return InputImageRotation.rotation0deg;
+      case 90:
+        return InputImageRotation.rotation90deg;
+      case 180:
+        return InputImageRotation.rotation180deg;
+      case 270:
+        return InputImageRotation.rotation270deg;
+      default:
+        return InputImageRotation.rotation0deg;
+    }
+  }
+
+  void _onImage(CameraImage image) async {
+    if (_busy) return;
+    final now = DateTime.now();
+    if (now.difference(_lastPoseTs).inMilliseconds < 80) return;
+    _busy = true;
+    _lastPoseTs = now;
+    try {
+      final rotation = _rotationFromDegrees(_controller!.description.sensorOrientation);
+      final format = image.format.group == ImageFormatGroup.bgra8888
+          ? InputImageFormat.bgra8888
+          : InputImageFormat.yuv420;
+      final metadata = InputImageMetadata(
+        size: Size(image.width.toDouble(), image.height.toDouble()),
+        rotation: rotation,
+        format: format,
+        bytesPerRow: image.planes[0].bytesPerRow,
+      );
+      final inputImage = InputImage.fromBytes(bytes: image.planes[0].bytes, metadata: metadata);
+      final poses = await _poseDetector.processImage(inputImage);
+      if (poses.isNotEmpty) {
+        final pose = poses.first;
+        final ls = pose.landmarks[PoseLandmarkType.leftShoulder];
+        final rs = pose.landmarks[PoseLandmarkType.rightShoulder];
+        final nose = pose.landmarks[PoseLandmarkType.nose];
+        if (ls != null && rs != null && nose != null) {
+          final imgW = image.width.toDouble();
+          final imgH = image.height.toDouble();
+          final size = MediaQuery.of(context).size;
+          final scale = (size.width / imgW > size.height / imgH) ? size.width / imgW : size.height / imgH;
+          final toScreen = (double x, double y) => Offset(
+                (x - imgW / 2) * scale + size.width / 2,
+                (y - imgH / 2) * scale + size.height / 2,
+              );
+          final l = toScreen(ls.x, ls.y);
+          final r = toScreen(rs.x, rs.y);
+          final n = toScreen(nose.x, nose.y);
+          final shoulderDist = (r - l).distance;
+          final center = Offset((l.dx + r.dx) / 2, (l.dy + r.dy) / 2);
+          final width = shoulderDist * 1.2;
+          double angle = (r - l).direction;
+          final downOffset = shoulderDist * 0.4;
+          Offset chest = Offset(center.dx, center.dy + downOffset);
+          final minTop = n.dy + shoulderDist * 0.15;
+          if (chest.dy < minTop) {
+            chest = Offset(chest.dx, minTop);
+          }
+          setState(() {
+            _overlayCenter = chest;
+            _overlayWidth = width;
+            _overlayAngle = angle;
+          });
+        }
+      }
+    } catch (_) {
+    } finally {
+      _busy = false;
+    }
   }
 
   @override
@@ -633,7 +720,7 @@ class _TryOnScreenState extends State<TryOnScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     final size = MediaQuery.of(context).size;
-    final shirtWidth = size.width * 0.6;
+    final shirtWidth = _overlayWidth > 0 ? _overlayWidth : size.width * 0.6;
     final previewSize = _controller!.value.previewSize;
     final previewW = previewSize?.width ?? size.width;
     final previewH = previewSize?.height ?? size.height;
@@ -650,14 +737,29 @@ class _TryOnScreenState extends State<TryOnScreen> {
           ),
         ),
         Center(
-          child: Opacity(
-            opacity: 0.7,
-            child: Image.asset(
-              _shirts[_shirtIndex],
-              width: shirtWidth,
-              fit: BoxFit.contain,
-            ),
-          ),
+          child: _overlayCenter == null
+              ? Opacity(
+                  opacity: 0.7,
+                  child: Image.asset(
+                    _shirts[_shirtIndex],
+                    width: shirtWidth,
+                    fit: BoxFit.contain,
+                  ),
+                )
+              : Transform.translate(
+                  offset: Offset(_overlayCenter!.dx - size.width / 2, _overlayCenter!.dy - size.height / 2),
+                  child: Transform.rotate(
+                    angle: _overlayAngle,
+                    child: Opacity(
+                      opacity: 0.8,
+                      child: Image.asset(
+                        _shirts[_shirtIndex],
+                        width: shirtWidth,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ),
         ),
         Positioned(
           left: 24,
